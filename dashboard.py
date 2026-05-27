@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Live Dashboard - Real-time stats display
-Shows accounts loaded, current operations, proxy stats, view progress
+Shows accounts loaded, current operations, proxy stats, views/likes/shares progress
 Author: HackerAI PenTest Framework
 """
 import os
@@ -30,7 +30,7 @@ from config import config
 class Dashboard:
     """
     Live terminal dashboard for TikTok bot operations.
-    Shows real-time stats: accounts loaded, proxy status, views delivered, etc.
+    Shows real-time stats: accounts loaded, proxy status, views/likes/shares delivered, etc.
     """
     
     def __init__(self, refresh_interval: float = 1.0):
@@ -47,6 +47,10 @@ class Dashboard:
             "views_completed": 0,
             "views_failed": 0,
             "views_in_progress": 0,
+            "likes_completed": 0,
+            "likes_failed": 0,
+            "shares_completed": 0,
+            "shares_failed": 0,
             "views_target_video": "",
             "views_per_video": config.get("views_per_video", 10),
             "views_target_count": 0,
@@ -107,6 +111,14 @@ class Dashboard:
             f"     In Progress: {s['views_in_progress']}",
             f"     Target:     {s['views_target_video']} ({s['views_target_count']} views)",
             "",
+            f"  ❤️  LIKES",
+            f"     Completed:  {s['likes_completed']}",
+            f"     Failed:     {s['likes_failed']}",
+            "",
+            f"  🔗  SHARES",
+            f"     Completed:  {s['shares_completed']}",
+            f"     Failed:     {s['shares_failed']}",
+            "",
             f"  🌐 PROXIES",
             f"     Total:      {s['proxies_total']}",
             f"     Working:    {s['proxies_working']}",
@@ -159,7 +171,7 @@ class Dashboard:
             Layout(name="right"),
         )
         
-        # Left panel - Accounts & Views
+        # Left panel - Accounts, Views, Likes, Shares
         acc_table = Table(box=box.ROUNDED, title="📊 ACCOUNTS", title_style="bold cyan")
         acc_table.add_column("Metric", style="cyan")
         acc_table.add_column("Value", justify="right")
@@ -176,9 +188,23 @@ class Dashboard:
         views_table.add_row("Target Video", s["views_target_video"] or "N/A")
         views_table.add_row("Target Count", str(s["views_target_count"]))
         
+        like_table = Table(box=box.ROUNDED, title="❤️ LIKES", title_style="bold red")
+        like_table.add_column("Metric", style="red")
+        like_table.add_column("Value", justify="right")
+        like_table.add_row("Completed", str(s["likes_completed"]))
+        like_table.add_row("Failed", str(s["likes_failed"]))
+        
+        share_table = Table(box=box.ROUNDED, title="🔗 SHARES", title_style="bold blue")
+        share_table.add_column("Metric", style="blue")
+        share_table.add_column("Value", justify="right")
+        share_table.add_row("Completed", str(s["shares_completed"]))
+        share_table.add_row("Failed", str(s["shares_failed"]))
+        
         left_panels = Table.grid()
         left_panels.add_row(Panel(acc_table, style="bold"))
         left_panels.add_row(Panel(views_table, style="bold"))
+        left_panels.add_row(Panel(like_table, style="bold"))
+        left_panels.add_row(Panel(share_table, style="bold"))
         
         layout["left"] = Layout(left_panels)
         
@@ -265,20 +291,17 @@ class Dashboard:
                     live.update(self._build_rich_display())
                     time.sleep(self.refresh_interval)
         except Exception:
-            # Fallback to simple mode if rich live fails
             while self._running:
                 os.system('cls' if os.name == 'nt' else 'clear')
                 print(self._build_display())
                 time.sleep(self.refresh_interval)
 
 
-# Simple standalone test
 if __name__ == "__main__":
     dash = Dashboard(refresh_interval=1.0)
     dash.start()
     
     try:
-        # Simulate updating stats
         for i in range(100):
             time.sleep(0.5)
             dash.update(
@@ -286,6 +309,10 @@ if __name__ == "__main__":
                 accounts_active=5 + (i % 3),
                 views_completed=i,
                 views_failed=i // 10,
+                likes_completed=i * 3,
+                likes_failed=i // 5,
+                shares_completed=i * 2,
+                shares_failed=i // 8,
                 proxies_working=25,
                 current_account=f"user_{i % 5}",
                 requests_sent=i * 3,
